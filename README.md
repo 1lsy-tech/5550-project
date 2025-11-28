@@ -1,5 +1,6 @@
 # CO₂ Forecast from Energy Use — Regression Baseline
 
+<<<<<<< HEAD
 ## Problem Definition
 
 This project aims to predict annual country-level CO₂ emissions using a combination of macro-level indicators, including energy consumption structure, GDP per capita, and population. Understanding the drivers of national CO₂ emissions is important for climate policy, long-term planning, and evaluating the potential impacts of energy or economic transitions. By modeling CO₂ emissions with a set of transparent and interpretable features, the project seeks to highlight which socioeconomic and energy variables contribute most to changes in emissions.
@@ -23,6 +24,8 @@ https://data.worldbank.org/
 
 This ensures transparency regarding data origin and allows the full pipeline to be reproduced using either the included sample dataset or the original online sources.
 
+=======
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
 This is a **minimal, working, end-to-end** pipeline that:
 1. Reads and refines energy + CO₂ data (synthetic sample provided; can fetch OWID in Colab).
 2. Trains baseline regressors (Linear, Ridge, Lasso, Random Forest).

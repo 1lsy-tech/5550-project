@@ -1,13 +1,20 @@
 import os, json
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import Tuple, Dict, Any, Optional
+=======
+from typing import Tuple, Dict
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+<<<<<<< HEAD
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.base import clone
+=======
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
 import matplotlib.pyplot as plt
 
 @dataclass
@@ -49,6 +56,7 @@ def metrics(y_true, y_pred) -> Dict[str, float]:
     r2 = float(r2_score(y_true, y_pred))
     return {"MAE": mae, "RMSE": rmse, "R2": r2}
 
+<<<<<<< HEAD
 def plot_country_timeseries(
     test_df: pd.DataFrame,
     y_true: np.ndarray,
@@ -249,10 +257,15 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     maybe_makedirs(config.outputs_dir)
 
     # ---------- 1. Load data and split ----------
+=======
+def run_all(config: Config) -> Dict[str, Dict[str, float]]:
+    maybe_makedirs(config.outputs_dir)
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
     df = load_data(config.data_csv)
     (X_train, y_train), (X_test, y_test), train_df, test_df = train_test_split_by_year(
         df, config.test_start_year, config.target_col, config.feature_cols
     )
+<<<<<<< HEAD
 
     # ---------- BASELINE 1: naive last-year carry-forward ----------
     baseline1_preds = []
@@ -347,11 +360,21 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     results: Dict[str, Dict[str, float]] = {}
     preds_hold: Dict[str, np.ndarray] = {}
 
+=======
+    models = {
+        "LinearRegression": LinearRegression(),
+        "Ridge": Ridge(alpha=1.0, random_state=42),
+        "Lasso": Lasso(alpha=0.001, random_state=42, max_iter=10000),
+        "RandomForest": RandomForestRegressor(n_estimators=300, random_state=42, n_jobs=-1),
+    }
+    results, preds_hold = {}, {}
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
     for name, model in models.items():
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         results[name] = metrics(y_test, y_pred)
         preds_hold[name] = y_pred
+<<<<<<< HEAD
 
     # ---------- 4. Save metrics, predictions and plots ----------
     # Save metrics
@@ -371,11 +394,18 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     best_model = min(results.items(), key=lambda kv: kv[1]["RMSE"])[0]
     best_pred = preds_hold[best_model]
 
+=======
+    with open(os.path.join(config.outputs_dir, "metrics.json"), "w") as f:
+        json.dump(results, f, indent=2)
+    best_model = min(results.items(), key=lambda kv: kv[1]["RMSE"])[0]
+    best_pred = preds_hold[best_model]
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
     out_df = test_df[["country", "year"]].copy()
     out_df["y_true"] = y_test
     out_df["y_pred"] = best_pred
     out_df["model"] = best_model
     out_df.to_csv(os.path.join(config.outputs_dir, "pred_vs_actual_test.csv"), index=False)
+<<<<<<< HEAD
 
     # Predicted vs actual scatter
     plt.figure(figsize=(6, 6))
@@ -384,6 +414,11 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
         min(out_df["y_true"].min(), out_df["y_pred"].min()),
         max(out_df["y_true"].max(), out_df["y_pred"].max()),
     ]
+=======
+    plt.figure(figsize=(6,6))
+    plt.scatter(out_df["y_true"], out_df["y_pred"], alpha=0.7)
+    lims = [min(out_df["y_true"].min(), out_df["y_pred"].min()), max(out_df["y_true"].max(), out_df["y_pred"].max())]
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
     plt.plot(lims, lims, "--")
     plt.xlabel("Actual CO₂ (Mt)")
     plt.ylabel("Predicted CO₂ (Mt)")
@@ -391,6 +426,7 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     plt.tight_layout()
     plt.savefig(os.path.join(config.outputs_dir, "pred_vs_actual_plot.png"), dpi=200)
     plt.close()
+<<<<<<< HEAD
 
     # Residual plot for the best model
     residual_plot_path = os.path.join(config.outputs_dir, "residuals_best_model.png")
@@ -409,3 +445,6 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     return results
 
 
+=======
+    return results
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871

@@ -1,5 +1,12 @@
+<<<<<<< HEAD
 pandas==2.2.2
 numpy==1.26.4
 scikit-learn==1.4.2
 matplotlib==3.8.4
 codecarbon==2.3.2
+=======
+pandas
+numpy
+scikit-learn
+matplotlib
+>>>>>>> 31cbd61a6b0eea627889766f887c47eb416f2871
