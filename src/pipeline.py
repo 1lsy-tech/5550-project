@@ -10,6 +10,7 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.base import clone
 import matplotlib.pyplot as plt
 
+
 @dataclass
 class Config:
     data_csv: str = "data/sample_owid_energy_co2.csv"
@@ -25,8 +26,10 @@ class Config:
         "population",
     )
 
+
 def maybe_makedirs(path: str):
     os.makedirs(path, exist_ok=True)
+
 
 def load_data(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -34,7 +37,13 @@ def load_data(path: str) -> pd.DataFrame:
     df["year"] = df["year"].astype(int)
     return df
 
-def train_test_split_by_year(df: pd.DataFrame, test_start_year: int, target_col: str, feature_cols: Tuple[str, ...]):
+
+def train_test_split_by_year(
+    df: pd.DataFrame,
+    test_start_year: int,
+    target_col: str,
+    feature_cols: Tuple[str, ...],
+):
     train_df = df[df["year"] < test_start_year].copy()
     test_df = df[df["year"] >= test_start_year].copy()
     X_train = train_df[list(feature_cols)].values
@@ -43,11 +52,13 @@ def train_test_split_by_year(df: pd.DataFrame, test_start_year: int, target_col:
     y_test = test_df[target_col].values
     return (X_train, y_train), (X_test, y_test), train_df, test_df
 
+
 def metrics(y_true, y_pred) -> Dict[str, float]:
     mae = float(mean_absolute_error(y_true, y_pred))
     rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
     r2 = float(r2_score(y_true, y_pred))
     return {"MAE": mae, "RMSE": rmse, "R2": r2}
+
 
 def plot_country_timeseries(
     test_df: pd.DataFrame,
@@ -76,40 +87,60 @@ def plot_country_timeseries(
         plt.ylabel("CO₂ (Mt)")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(os.path.join(out_dir, f"time_series_{c.replace(' ', '_')}.png"), dpi=200)
+        plt.savefig(
+            os.path.join(out_dir, f"time_series_{c.replace(' ', '_')}.png"),
+            dpi=200,
+        )
         plt.close()
 
 
 def plot_metric_bars(results: Dict[str, Dict[str, float]], out_dir: str) -> None:
-
+    """
+    Bar charts for MAE / RMSE / R² on the test set.
+    Use shorter, cleaner labels on the x-axis so they don't overlap.
+    """
     models = list(results.keys())
     maes = [results[m]["MAE"] for m in models]
     rmses = [results[m]["RMSE"] for m in models]
     r2s = [results[m]["R2"] for m in models]
 
+    # 映射成更短的名字，防止 x 轴挤在一起
+    pretty_names = {
+        "LinearRegression": "Linear",
+        "Ridge": "Ridge",
+        "Lasso": "Lasso",
+        "RandomForest": "RF",
+        "Baseline_LastYear": "LastYear",
+        "Baseline_GDPonly": "GDPOnly",
+    }
+    labels = [pretty_names.get(m, m) for m in models]
+
     # MAE bar plot
-    plt.figure(figsize=(6, 4))
-    plt.bar(models, maes)
+    plt.figure(figsize=(8, 5))
+    plt.bar(labels, maes)
     plt.ylabel("MAE")
     plt.title("MAE by model (test set)")
+    plt.xticks(rotation=30, ha="right")
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "metrics_mae_bar.png"), dpi=200)
     plt.close()
 
     # RMSE bar plot
-    plt.figure(figsize=(6, 4))
-    plt.bar(models, rmses)
+    plt.figure(figsize=(8, 5))
+    plt.bar(labels, rmses)
     plt.ylabel("RMSE")
     plt.title("RMSE by model (test set)")
+    plt.xticks(rotation=30, ha="right")
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "metrics_rmse_bar.png"), dpi=200)
     plt.close()
 
     # R2 bar plot
-    plt.figure(figsize=(6, 4))
-    plt.bar(models, r2s)
+    plt.figure(figsize=(8, 5))
+    plt.bar(labels, r2s)
     plt.ylabel("R²")
     plt.title("R² by model (test set)")
+    plt.xticks(rotation=30, ha="right")
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "metrics_r2_bar.png"), dpi=200)
     plt.close()
@@ -120,9 +151,10 @@ def plot_feature_importances(
     feature_names: list[str],
     out_dir: str,
 ) -> None:
-
     # --- RandomForest feature importances ---
-    if "RandomForest" in models and hasattr(models["RandomForest"], "feature_importances_"):
+    if "RandomForest" in models and hasattr(
+        models["RandomForest"], "feature_importances_"
+    ):
         rf = models["RandomForest"]
         importances = rf.feature_importances_
         idx_sorted = np.argsort(importances)[::-1]  # descending
@@ -134,7 +166,10 @@ def plot_feature_importances(
         plt.xlabel("Importance")
         plt.title("RandomForest feature importances")
         plt.tight_layout()
-        plt.savefig(os.path.join(out_dir, "feature_importance_random_forest.png"), dpi=200)
+        plt.savefig(
+            os.path.join(out_dir, "feature_importance_random_forest.png"),
+            dpi=200,
+        )
         plt.close()
 
     # --- Linear coefficients (use Ridge if available, else LinearRegression) ---
@@ -156,7 +191,10 @@ def plot_feature_importances(
         plt.xlabel("Coefficient")
         plt.title(f"{linear_key} coefficients (sorted by absolute value)")
         plt.tight_layout()
-        plt.savefig(os.path.join(out_dir, f"feature_coefficients_{linear_key}.png"), dpi=200)
+        plt.savefig(
+            os.path.join(out_dir, f"feature_coefficients_{linear_key}.png"),
+            dpi=200,
+        )
         plt.close()
 
 
@@ -179,9 +217,12 @@ def plot_residuals(
     plt.close()
 
 
-
-def cross_val_model(model, X_train: np.ndarray, y_train: np.ndarray, n_splits: int = 3) -> Dict[str, float]:
-
+def cross_val_model(
+    model,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    n_splits: int = 3,
+) -> Dict[str, float]:
     tscv = TimeSeriesSplit(n_splits=n_splits)
 
     mae_list, rmse_list, r2_list = [], [], []
@@ -189,7 +230,6 @@ def cross_val_model(model, X_train: np.ndarray, y_train: np.ndarray, n_splits: i
         X_tr, X_val = X_train[train_idx], X_train[val_idx]
         y_tr, y_val = y_train[train_idx], y_train[val_idx]
 
-        # clone() makes a fresh copy of the model for each fold
         m = clone(model)
         m.fit(X_tr, y_tr)
         y_val_pred = m.predict(X_val)
@@ -214,8 +254,6 @@ def grid_search_time_series(
     n_splits: int = 3,
     base_kwargs: Optional[Dict[str, Any]] = None,
 ):
-
-
     from itertools import product
 
     if base_kwargs is None:
@@ -223,7 +261,7 @@ def grid_search_time_series(
 
     best_rmse = float("inf")
     best_params: Dict[str, Any] = {}
-    best_cv_metrics: Dict[str, float] | None = None
+    best_cv_metrics: Optional[Dict[str, float]] = None
 
     # Create all combinations of hyperparameters
     keys = list(param_grid.keys())
@@ -245,7 +283,6 @@ def grid_search_time_series(
 
 
 def run_all(config: Config) -> Dict[str, Dict[str, float]]:
-
     maybe_makedirs(config.outputs_dir)
 
     # ---------- 1. Load data and split ----------
@@ -256,15 +293,13 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
 
     # ---------- BASELINE 1: naive last-year carry-forward ----------
     baseline1_preds = []
-    for i, row in test_df.iterrows():
+    for _, row in test_df.iterrows():
         country = row["country"]
         year = row["year"]
-        # Find the country's CO₂ for the previous year
         prev = df[(df["country"] == country) & (df["year"] == year - 1)]
         if len(prev) > 0:
             baseline1_preds.append(prev[config.target_col].values[0])
         else:
-            # If the previous year's data is unavailable, use the average value of the training set.
             baseline1_preds.append(float(np.mean(y_train)))
 
     baseline1_metrics = metrics(y_test, np.array(baseline1_preds))
@@ -281,9 +316,7 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
 
     baseline2_metrics = metrics(y_test, gdp_pred)
 
-
     # ---------- 2. Hyperparameter tuning with TimeSeriesSplit ----------
-    # LinearRegression: no hyperparameters to tune in this simple setup
     linear_model = LinearRegression()
 
     # Ridge: alpha in {0.1, 1.0, 10.0}
@@ -294,7 +327,7 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
         X_train,
         y_train,
         n_splits=3,
-        base_kwargs={},  # can add "random_state" if desired for other models
+        base_kwargs={},
     )
     ridge_model = Ridge(**ridge_best_params)
 
@@ -331,10 +364,11 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
         "Lasso": {"best_params": lasso_best_params, "cv_metrics": lasso_cv_metrics},
         "RandomForest": {"best_params": rf_best_params, "cv_metrics": rf_cv_metrics},
     }
-
-    with open(os.path.join(config.outputs_dir, "best_hyperparameters.json"), "w") as f:
+    with open(
+        os.path.join(config.outputs_dir, "best_hyperparameters.json"),
+        "w",
+    ) as f:
         json.dump(hp_summary, f, indent=2)
-
 
     # ---------- 3. Fit all models on full training data ----------
     models = {
@@ -354,7 +388,6 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
         preds_hold[name] = y_pred
 
     # ---------- 4. Save metrics, predictions and plots ----------
-    # Save metrics
     # add baselines into results
     results["Baseline_LastYear"] = baseline1_metrics
     results["Baseline_GDPonly"] = baseline2_metrics
@@ -375,7 +408,10 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     out_df["y_true"] = y_test
     out_df["y_pred"] = best_pred
     out_df["model"] = best_model
-    out_df.to_csv(os.path.join(config.outputs_dir, "pred_vs_actual_test.csv"), index=False)
+    out_df.to_csv(
+        os.path.join(config.outputs_dir, "pred_vs_actual_test.csv"),
+        index=False,
+    )
 
     # Predicted vs actual scatter
     plt.figure(figsize=(6, 6))
@@ -389,7 +425,10 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
     plt.ylabel("Predicted CO₂ (Mt)")
     plt.title(f"Predicted vs Actual ({best_model})")
     plt.tight_layout()
-    plt.savefig(os.path.join(config.outputs_dir, "pred_vs_actual_plot.png"), dpi=200)
+    plt.savefig(
+        os.path.join(config.outputs_dir, "pred_vs_actual_plot.png"),
+        dpi=200,
+    )
     plt.close()
 
     # Residual plot for the best model
@@ -405,7 +444,4 @@ def run_all(config: Config) -> Dict[str, Dict[str, float]]:
         out_dir=config.outputs_dir,
     )
 
-
     return results
-
-
